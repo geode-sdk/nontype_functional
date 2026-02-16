@@ -224,6 +224,7 @@ template<class S, class R, class... Args> class function<S, R(Args...)>
         std::byte storage_[sizeof(typical_target_object)];
 
     auto storage_location() noexcept -> void * { return &storage_; }
+    auto storage_location() const noexcept -> const void * { return &storage_; }
 
     auto target() noexcept
     {
@@ -239,7 +240,7 @@ template<class S, class R, class... Args> class function<S, R(Args...)>
   public:
     using result_type = R;
 
-    function() noexcept { __builtin_memset(storage_, 0, sizeof(storage_)); }
+    function() noexcept { __builtin_memset(storage_location(), 0, sizeof(storage_)); }
     function(nullptr_t) noexcept : function() {}
 
     template<class F>
@@ -281,8 +282,14 @@ template<class S, class R, class... Args> class function<S, R(Args...)>
         ::new (storage_location()) T(std::forward<U>(obj));
     }
 
-    function(function const &other) { other.target()->copy_into(storage_); }
-    function(function &&other) noexcept { other.target()->move_into(storage_); }
+    function(function const &other) {
+        if (other) other.target()->copy_into(storage_);
+        else std::construct_at(this);
+    }
+    function(function &&other) noexcept {
+        if (other) other.target()->move_into(storage_);
+        else std::construct_at(this);
+    }
 
     function &operator=(function const &other)
     {
@@ -309,7 +316,7 @@ template<class S, class R, class... Args> class function<S, R(Args...)>
     void swap(function &other) noexcept { std::swap<function>(*this, other); }
     friend void swap(function &lhs, function &rhs) noexcept { lhs.swap(rhs); }
 
-    ~function() { std::destroy_at(target()); }
+    ~function() { if (*this) std::destroy_at(target()); }
 
     explicit operator bool() const noexcept
     {
@@ -321,6 +328,10 @@ template<class S, class R, class... Args> class function<S, R(Args...)>
 
     R operator()(Args... args) const
     {
+        constexpr void* null = nullptr;
+        if (__builtin_memcmp((void*)storage_location(), &null, sizeof(void *)) == 0) [[unlikely]]
+            throw std::bad_function_call{};
+
         return (*target())(std::forward<Args>(args)...);
     }
 };
