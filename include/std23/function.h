@@ -239,7 +239,7 @@ template<class S, class R, class... Args> class function<S, R(Args...)>
   public:
     using result_type = R;
 
-    function() noexcept { ::new (storage_location()) empty_target_object; }
+    function() noexcept { __builtin_memset(storage_, 0, sizeof(storage_)); }
     function(nullptr_t) noexcept : function() {}
 
     template<class F>
@@ -313,7 +313,7 @@ template<class S, class R, class... Args> class function<S, R(Args...)>
 
     explicit operator bool() const noexcept
     {
-        constexpr empty_target_object null;
+        constexpr void* null = nullptr;
         return __builtin_memcmp(storage_, (void *)&null, sizeof(void *)) != 0;
     }
 

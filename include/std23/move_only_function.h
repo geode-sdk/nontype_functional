@@ -467,7 +467,7 @@ class move_only_function<S, R(Args...)>
 
     explicit operator bool() const noexcept
     {
-        return &vtbl_.get() != &trait::abstract_base;
+        return vtbl_.get().call != nullptr;
     }
 
     friend bool operator==(move_only_function const &f, nullptr_t) noexcept
