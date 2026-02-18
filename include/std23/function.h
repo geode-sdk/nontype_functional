@@ -240,7 +240,7 @@ template<class S, class R, class... Args> class function<S, R(Args...)>
   public:
     using result_type = R;
 
-    function() noexcept { __builtin_memset(storage_location(), 0, sizeof(storage_)); }
+    function() noexcept { *(void**)storage_location() = nullptr; }
     function(nullptr_t) noexcept : function() {}
 
     template<class F>
@@ -320,16 +320,14 @@ template<class S, class R, class... Args> class function<S, R(Args...)>
 
     explicit operator bool() const noexcept
     {
-        constexpr void* null = nullptr;
-        return __builtin_memcmp(storage_, (void *)&null, sizeof(void *)) != 0;
+        return *(void**)storage_location() == nullptr;
     }
 
     friend bool operator==(function const &f, nullptr_t) noexcept { return !f; }
 
     R operator()(Args... args) const
     {
-        constexpr void* null = nullptr;
-        if (__builtin_memcmp((void*)storage_location(), &null, sizeof(void *)) == 0) [[unlikely]]
+        if (!*this) [[unlikely]]
             throw std::bad_function_call{};
 
         return (*target())(std::forward<Args>(args)...);
