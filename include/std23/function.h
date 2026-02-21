@@ -320,7 +320,7 @@ template<class S, class R, class... Args> class function<S, R(Args...)>
 
     explicit operator bool() const noexcept
     {
-        return *(void**)storage_location() == nullptr;
+        return *(void**)storage_location() != nullptr;
     }
 
     friend bool operator==(function const &f, nullptr_t) noexcept { return !f; }
