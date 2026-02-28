@@ -1,6 +1,7 @@
 #ifndef INCLUDE_STD23____FUNCTIONAL__BASE
 #define INCLUDE_STD23____FUNCTIONAL__BASE
 
+#include <type_traits>
 #include <functional>
 #include <utility>
 
